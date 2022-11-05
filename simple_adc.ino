@@ -1,8 +1,14 @@
+#include "BluetoothSerial.h"
+
 #define POT 2
 #define LED_1 33
 #define LED_2 32
 #define LED_3 18
 #define LED_4 19
+
+BluetoothSerial SerialBT;
+const String DEVICE_NAME = "ESP32 board";
+byte dataRX;
 
 float voltage;
 
@@ -13,13 +19,21 @@ void setup() {
   pinMode(LED_3, OUTPUT);
   pinMode(LED_4, OUTPUT);
 
-  Serial.begin(9600);
+  Serial.begin(115200);
+  SerialBT.begin(DEVICE_NAME);
+
+  Serial.begin(115200);
 }
 
 void loop() {
   voltage = analogRead(POT) * 3.3 / 4095;
+  int decimal = int(voltage * 10) % 10;
+  char vInt = int_to_char(voltage);
+  char vDecimal = int_to_char(decimal);
+  serialEvent(vInt, vDecimal);
   
-  Serial.println("Voltage: " + String(voltage));
+  //Serial.println("Voltage: " + String(voltage));
+  Serial.println("Voltage: " + String(vInt) + "." + String(vDecimal));
 
   if (voltage <= 1.0) {
     turnOnLed1();
@@ -29,6 +43,23 @@ void loop() {
     turnOnLed3();
   } else {
     turnOnLed4();
+  }
+}
+
+char int_to_char(int num) {
+  return char(num + 48);
+}
+
+void serialEvent(char vInt, char vDecimal) {
+  delay(20);
+
+  SerialBT.write(vInt);
+  SerialBT.write('.');
+  SerialBT.write(vDecimal);
+  SerialBT.write('\n');
+  
+  if (SerialBT.available()) {
+    Serial.write(SerialBT.read());
   }
 }
 
